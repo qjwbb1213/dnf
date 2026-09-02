@@ -23,7 +23,7 @@ do
   fi
 done
 
-# Netbirf获取内网IP
+# Netbird获取内网IP
 while [ -z "$MONITOR_PUBLIC_IP" ] && [ -n "$NB_SETUP_KEY" ] && [ -n "$NB_MANAGEMENT_URL" ];
 do
   echo "check private ip from $NB_MANAGEMENT_URL"
@@ -73,8 +73,15 @@ wait_time=${DDNS_INTERVAL:-10}
 while [ -z "$MONITOR_PUBLIC_IP" ] && [ "$DDNS_ENABLE" = true ] &&  [ -n "$DDNS_DOMAIN" ];
 do
   old_ip=$(cat /data/monitor_ip/MONITOR_PUBLIC_IP 2>/dev/null || true)
-  nslookup_output=$(nslookup -debug $DDNS_DOMAIN 2>/dev/null || true)
-  ddns_ip=$(echo "$nslookup_output" | awk '/^Address: / { print $2 }')
+  # nslookup_output=$(nslookup -debug $DDNS_DOMAIN 2>/dev/null || true)
+  # 只获取IPV4地址
+  nslookup_output=$(nslookup -type=A $DDNS_DOMAIN 2>/dev/null || true)
+  
+  # ddns_ip=$(echo "$nslookup_output" | awk '/^Address: / { print $2 }')
+  # nslookup 可能会得到 100.100.100.100 因此必须要和Name一组的IP才是真正的DDNS IP
+  ddns_ip=$(echo "$nslookup_output" | awk '/^Name:/{found=1} found && /^Address:/{print $2; exit}' | sed 's/#.*//')
+
+  
   # 判断ddns_ip是否为空
   if [ -z "$ddns_ip" ]; then
     echo "ddns ip is empty, wait $wait_time second"
@@ -87,12 +94,17 @@ do
     echo "domain ip changed, old ip is $old_ip, new ip is $ddns_ip"
     # 通知其他进程[写入文件]
     echo $ddns_ip > /data/monitor_ip/MONITOR_PUBLIC_IP
-    # 重启bridge proxy
-    if [ -n "$MAIN_BRIDGE_IP" ]; then
-      supervisorctl restart dnf:bridge
+    # 当(SERVER_TYPE是CORE或ALL)并且MAIN_BRIDGE_IP为空时重启bridge
+    if [ "$SERVER_TYPE" = "CORE" ] || [ "$SERVER_TYPE" = "ALL" ]; then
+      if [ -z "$MAIN_BRIDGE_IP" ] || [ "$MAIN_BRIDGE_IP" = "127.0.0.1" ]; then
+        supervisorctl restart core:bridge
+      fi
     fi
-    # 重启所有频道服务
-    supervisorctl restart dnf_channel:*
+    # 重启所有game服务
+    if [ "$SERVER_TYPE" = "GAME" ] || [ "$SERVER_TYPE" = "ALL" ]; then
+      supervisorctl restart game:*
+    fi
+   
   else
     echo "domain ip not change, ip is $ddns_ip, wait $wait_time second"
   fi
@@ -117,12 +129,16 @@ do
     echo "net ip changed, old ip is $old_ip, new ip is $ddns_ip"
     # 通知其他进程[写入文件]
     echo $ddns_ip > /data/monitor_ip/MONITOR_PUBLIC_IP
-    # 重启bridge proxy
-    if [ -n "$MAIN_BRIDGE_IP" ]; then
-      supervisorctl restart dnf:bridge
+    # 当(SERVER_TYPE是CORE或ALL)并且MAIN_BRIDGE_IP为空时重启bridge
+    if [ "$SERVER_TYPE" = "CORE" ] || [ "$SERVER_TYPE" = "ALL" ]; then
+      if [ -z "$MAIN_BRIDGE_IP" ] || [ "$MAIN_BRIDGE_IP" = "127.0.0.1" ]; then
+        supervisorctl restart core:bridge
+      fi
     fi
-    # 重启所有频道服务
-    supervisorctl restart dnf_channel:*
+    # 重启所有game服务
+    if [ "$SERVER_TYPE" = "GAME" ] || [ "$SERVER_TYPE" = "ALL" ]; then
+      supervisorctl restart game:*
+    fi
   else
     echo "net ip not change, ip is $ddns_ip, wait $wait_time second"
   fi
@@ -133,7 +149,7 @@ done
 # 必须等待一定时间后才可以退出
 sleep 10
 if [ -z "$MONITOR_PUBLIC_IP" ]; then
-  echo "warning!!! empty PUBLIC_IP, exit..."
+  echo "WARNING: empty PUBLIC_IP, exit..."
   exit -1
 else
   # 通知其他进程[写入文件]

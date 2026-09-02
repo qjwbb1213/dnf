@@ -62,7 +62,7 @@ mkdir -p /data/log /data/mysql /data/data
 # --shm-size=8g【不可删除】，docker默认为64M较小，需要增加才能保证运行
 # 注意，最后的 1995chen/dnf:centos5-2.1.5 部分中的 centos5，你在上一步(环境配置)拉取得哪个版本，则应替换为哪个版本
 # tailscale需要额外映射设备: --device /dev/net/tun:/dev/net/tun
-docker run -d -e PUBLIC_IP=x.x.x.x -e WEB_USER=root -e WEB_PASS=123456 -e DNF_DB_ROOT_PASSWORD=88888888 -e GM_ACCOUNT=gmuser -e GM_PASSWORD=gmpass -e CLIENT_POOL_SIZE=10 -v /data/log:/home/neople/game/log -v /data/mysql:/var/lib/mysql -v /data/data:/data -p 2000:180 -p 3000:3306/tcp -p 7600:7600/tcp -p 881:881/tcp -p 7001:7001/tcp -p 7001:7001/udp -p 30011:30011/tcp -p 31011:31011/udp -p 30052:30052/tcp -p 31052:31052/udp -p 7300:7300/tcp -p 7300:7300/udp -p 2311-2313:2311-2313/udp --cap-add=NET_ADMIN --hostname=dnf --cpus=1 --memory=1g --memory-swap=-1 --shm-size=8g --name=dnf 1995chen/dnf:centos5-2.1.9.fix1
+docker run -d -e PUBLIC_IP=x.x.x.x -e WEB_USER=root -e WEB_PASS=123456 -e DNF_DB_ROOT_PASSWORD=88888888 -e GM_ACCOUNT=gmuser -e GM_PASSWORD=gmpass -e CLIENT_POOL_SIZE=10 -v /data/log:/home/neople/game/log:Z -v /data/mysql:/var/lib/mysql:Z -v /data/data:/data:Z -p 2000:180 -p 3000:3306/tcp -p 7600:7600/tcp -p 881:881/tcp -p 7001:7001/tcp -p 7001:7001/udp -p 30011:30011/tcp -p 31011:31011/udp -p 30052:30052/tcp -p 31052:31052/udp -p 7300:7300/tcp -p 7300:7300/udp -p 2311-2313:2311-2313/udp --cap-add=NET_ADMIN --hostname=dnf --cpus=1 --memory=1g --memory-swap=-1 --shm-size=8g --name=dnf 1995chen/dnf:centos5-2.1.9.fix1
 ```
 
 ## 如何确认已经成功启动
@@ -282,6 +282,8 @@ QQ 5群：738105518(已满)
 
 QQ 6群：933010289
 
+QQ 7群：971177373
+
 欢迎各路大神加入。一起完善项目，成就当年梦，800万勇士冲！
 
 (群内没有任何的收费项目)
@@ -312,4 +314,5 @@ llnut清风1031镜像：[llnut/dnf](https://github.com/llnut/dnf)
 在未来的道路上，我将继续努力改进和完善这个项目，以回报您的支持与信任。希望我们能够继续保持联系，共同见证这个项目的成长与发展。
 
 再次感谢您的支持与帮助！
+
 
